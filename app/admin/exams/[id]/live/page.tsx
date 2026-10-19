@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import QRCode from "qrcode";
-import { use, useCallback, useEffect, useState } from "react";
-import { AdminGate, AdminHeader } from "@/components/admin";
+import { use, useCallback, useEffect, useRef, useState } from "react";
+import { AdminGate, AdminHeader, adminFetch } from "@/components/admin";
 import { Deco, Err, Ring, Spinner, usePoll, useRemaining } from "@/components/ui";
 import { rpc } from "@/lib/sb";
 import { STATUS_LABEL, type Exam } from "@/lib/types";
@@ -30,6 +30,15 @@ function LiveView({ pass, id }: { pass: string; id: string }) {
   usePoll(() => { rpc<Live>("hx_admin_live", { p: pass, p_id: id }).then(setLive).catch((e) => setErr(e.message)); }, 2500, [pass, id]);
 
   const status = live?.status ?? exam?.status;
+  const [essay, setEssay] = useState("");
+  const essayRun = useRef(false);
+  useEffect(() => {
+    if (status !== "ended" || essayRun.current || !exam) return;
+    essayRun.current = true;
+    adminFetch<{ graded: number }>("/api/grade-essay", pass, { examId: id })
+      .then((r) => setEssay(r.graded ? `서술형 답안 ${r.graded}건을 AI가 자동 채점해 학습자 화면에 반영했어요.` : ""))
+      .catch((e) => setEssay(`서술형 자동 채점 실패: ${e.message} (결과 대시보드에서 다시 시도하세요)`));
+  }, [status, exam, pass, id]);
   const left = useRemaining(live?.ends_at, live?.server_now) ?? 0;
   const joined = live?.people.length ?? 0;
   const submitted = live?.people.filter((p) => p.submitted).length ?? 0;
@@ -101,6 +110,7 @@ function LiveView({ pass, id }: { pass: string; id: string }) {
                 <img src="/img/trophy.png" alt="" style={{ width: 110, margin: "0 auto" }} />
                 <h2 style={{ justifyContent: "center", margin: 0 }}>시험이 종료됐어요!</h2>
                 <p className="muted" style={{ margin: 0 }}>학습자 폰에 점수·정답·해설이 공개됐어요.</p>
+                {essay && <div className="info">{essay}</div>}
                 <Link href={`/admin/exams/${id}/report`} className="btn pink block lg">📊 결과 대시보드 보기</Link>
               </>
             )}

@@ -54,8 +54,9 @@ export default function Result({ r }: { r: MyResult }) {
               <span className="small muted" style={{ whiteSpace: "nowrap" }}>{it.earned}/{it.points}점</span>
             </summary>
             <dl className="kv">
-              <dt>내 답</dt><dd className={it.correct ? "ok" : "ng"}>{fmtAnswer(it, it.my)}</dd>
-              {!it.correct && (<><dt>정답</dt><dd><b>{key(it)}</b></dd></>)}
+              <dt>내 답</dt><dd className={it.correct ? "ok" : it.pending ? "" : "ng"}>{fmtAnswer(it, it.my)}</dd>
+              {it.pending && (<><dt>채점</dt><dd className="muted">⏳ 채점 중이에요. 잠시 후 점수가 자동으로 반영돼요.</dd></>)}
+              {!it.correct && (<><dt>{it.type === "essay" ? "모범답안" : "정답"}</dt><dd><b>{key(it)}</b></dd></>)}
               <dt>해설</dt><dd>{it.explanation}</dd>
             </dl>
           </details>

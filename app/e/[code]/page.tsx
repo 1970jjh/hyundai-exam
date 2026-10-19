@@ -44,16 +44,17 @@ export default function LearnerPage({ params }: { params: Promise<{ code: string
   }, [me, code]);
 
   const loadPub = useCallback(async () => {
-    if (result) return; // 결과까지 받았으면 더 묻지 않는다
+    const pending = result?.items.some((x) => x.pending);
+    if (result && !pending) return; // 채점이 끝난 결과까지 받았으면 더 묻지 않는다
     try {
-      const p = await rpc<Pub | null>("hx_exam_public", { p_code: code });
+      const p = result ? pub! : await rpc<Pub | null>("hx_exam_public", { p_code: code });
       setPub(p);
-      if (p?.status === "ended" && me && !result) {
+      if (p?.status === "ended" && me) {
         const r = await rpc<MyResult>("hx_my_result", { p_attempt: me.attempt_id, p_token: me.token });
         if (r.status === "ended") setResult(r);
       }
     } catch (e) { setErr((e as Error).message); }
-  }, [code, me, result]);
+  }, [code, me, result, pub]);
 
   const done = pub?.status === "ended" && (!!result || !me);
   usePoll(loadPub, pub?.status === "live" && !submitted ? 4000 : 2500, [loadPub, done, submitted, pub?.status]);
