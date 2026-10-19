@@ -119,7 +119,7 @@ function Editor({ pass, id }: { pass: string; id: string }) {
         <div className="card stack">
           <h2>📋 시험 정보</h2>
           <label className="field"><span>시험 제목</span><input className="input" value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} placeholder="예) 2026 신입사원 온보딩 종합평가" /></label>
-          <label className="field"><span>과정명</span><input className="input" value={meta.course} onChange={(e) => setMeta({ ...meta, course: e.target.value })} placeholder="예) 현대그룹 신입사원 입문교육" /></label>
+          <label className="field"><span>과정명</span><input className="input" value={meta.course} onChange={(e) => setMeta({ ...meta, course: e.target.value })} placeholder="예) 2026 신입사원 입문교육" /></label>
           <div className="grid3">
             <label className="field"><span>제한시간(분)</span><input className="input" type="number" min={1} max={300} value={meta.duration_min} onChange={(e) => setMeta({ ...meta, duration_min: Number(e.target.value) })} /></label>
             <label className="field"><span>경고 시점(초 전)</span><input className="input" type="number" min={0} max={3600} value={meta.warn_sec} onChange={(e) => setMeta({ ...meta, warn_sec: Number(e.target.value) })} /></label>

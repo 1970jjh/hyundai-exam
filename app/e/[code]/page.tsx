@@ -108,9 +108,9 @@ function Join({ pub, onJoined }: { pub: Pub; onJoined: (m: Me) => void }) {
           <img src="/img/hero-newbie.png" alt="" style={{ width: 210, filter: "drop-shadow(0 14px 22px rgba(80,40,160,.25))" }} />
         </div>
         <form className="card stack" onSubmit={submit}>
-          <label className="field"><span>이름</span><input className="input" required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="예) 김현대" autoComplete="name" /></label>
+          <label className="field"><span>이름</span><input className="input" required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="예) 홍길동" autoComplete="name" /></label>
           <label className="field"><span>이메일 (결과 리포트를 보내드려요)</span><input className="input" required type="email" maxLength={120} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" autoComplete="email" inputMode="email" /></label>
-          <label className="field"><span>소속 (선택)</span><input className="input" maxLength={60} value={dept} onChange={(e) => setDept(e.target.value)} placeholder="예) 현대엘리베이터 인사팀" /></label>
+          <label className="field"><span>소속 (선택)</span><input className="input" maxLength={60} value={dept} onChange={(e) => setDept(e.target.value)} placeholder="예) 인사팀" /></label>
           <Err msg={err} />
           <button className="btn primary block lg" disabled={busy}>{busy ? <Spinner /> : "챌린지 입장하기 →"}</button>
           <p className="muted small center" style={{ margin: 0 }}>총 {pub.n_questions}문항 · 제한시간 {pub.duration_min}분</p>
