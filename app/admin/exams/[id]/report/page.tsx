@@ -55,18 +55,16 @@ function Dashboard({ pass, id }: { pass: string; id: string }) {
     setMsg(graded ? `서술형 ${graded}건을 AI가 채점했어요. 응시자 상세에서 점수를 고칠 수 있어요.` : "채점할 서술형 응답이 없어요.");
   });
 
-  const sendMail = () => run("mail", async () => {
-    if (!confirm(`응시자 ${r!.attempts.filter((a) => a.email).length}명에게 개인 리포트 메일을 보낼까요?`)) return;
-    try {
-      const res = await adminFetch<{ sent: number; failed: { name: string; error: string }[] }>("/api/send-reports", pass, { examId: id });
-      await load();
-      setMsg(`메일 ${res.sent}건 발송 완료${res.failed.length ? ` · 실패 ${res.failed.length}건(${res.failed.map((f) => f.name).join(", ")})` : ""}`);
-    } catch (e) {
-      if ((e as { status?: number }).status === 501) {
-        await exportPersonalZip(r!, s!);
-        setMsg("메일 발송 키가 아직 없어 개인 리포트를 zip으로 내려받았어요. (Resend 키를 등록하면 바로 메일로 보낼 수 있어요)");
-      } else throw e;
-    }
+  const [mail, setMail] = useState<{ configured: boolean; via: string | null } | null>(null);
+  useEffect(() => { fetch("/api/send-reports").then((x) => x.json()).then(setMail).catch(() => setMail({ configured: false, via: null })); }, []);
+
+  const sendMail = (only?: string[]) => run("mail", async () => {
+    const n = only?.length ?? r!.attempts.filter((a) => a.email).length;
+    if (!confirm(`응시자 ${n}명에게 개인 리포트 메일을 보낼까요? (발송 계정: ${mail?.via})`)) return;
+    const res = await adminFetch<{ sent: number; failed: { name: string; error: string }[] }>("/api/send-reports", pass, { examId: id, attemptIds: only });
+    await load();
+    if (res.failed.length) setErr(`메일 ${res.sent}건 발송, 실패 ${res.failed.length}건: ${res.failed.map((f) => `${f.name}(${f.error})`).join(", ")}`);
+    else setMsg(`✅ 메일 ${res.sent}건을 실제로 발송했어요. 표의 «메일» 칸에서 발송 여부를 확인할 수 있어요.`);
   });
 
   if (!r || !s || !charts) return <div className="wrap center"><Err msg={err} /><Spinner dark /></div>;
@@ -96,10 +94,16 @@ function Dashboard({ pass, id }: { pass: string; id: string }) {
           <button className="btn sm" onClick={() => exportCsv(r, s)}>CSV(엑셀)</button>
           <span style={{ flex: 1 }} />
           <b style={{ marginRight: 6 }}>👤 개인 리포트</b>
-          <button className="btn pink sm" disabled={!!busy || r.exam.status !== "ended"} onClick={sendMail}>{busy === "mail" ? <Spinner /> : "✉️ 전원 메일 발송"}</button>
+          <button className="btn pink sm" disabled={!!busy || r.exam.status !== "ended" || !mail?.configured} onClick={() => sendMail()}
+            title={mail?.configured ? `발송 계정: ${mail.via}` : "메일 발송 계정이 아직 설정되지 않았어요"}>{busy === "mail" ? <Spinner /> : mail?.configured ? "✉️ 전원 메일 발송" : "✉️ 메일 발송(설정 필요)"}</button>
           <button className="btn sm" onClick={() => run("zip", () => exportPersonalZip(r, s))}>zip 다운로드</button>
           {r.questions.some((x) => x.type === "essay") && <button className="btn mint sm" disabled={!!busy} onClick={gradeEssays}>{busy === "essay" ? <Spinner /> : "🤖 서술형 AI 채점"}</button>}
         </div>
+        {mail && !mail.configured && <div className="err" style={{ marginTop: 10 }}>✉️ 메일 발송 계정이 아직 설정되지 않아 지금은 메일을 보낼 수 없어요. 설정 전에는 「zip 다운로드」로 개인 리포트를 받아 전달해 주세요.</div>}
+        {mail?.configured && r.attempts.some((a) => a.email && !a.emailed_at) && r.attempts.some((a) => a.emailed_at) && (
+          <div className="info" style={{ marginTop: 10 }}>아직 메일을 못 받은 {r.attempts.filter((a) => a.email && !a.emailed_at).length}명이 있어요.{" "}
+            <button className="btn sm" disabled={!!busy} onClick={() => sendMail(r.attempts.filter((a) => a.email && !a.emailed_at).map((a) => a.id))}>미발송자에게만 보내기</button></div>
+        )}
         {pending && <div className="info" style={{ marginTop: 10 }}>⏳ 채점 대기 중인 서술형 답안이 있어요. 「서술형 AI 채점」을 누르거나 응시자 상세에서 직접 점수를 넣어 주세요.</div>}
         {msg && <div className="info" style={{ marginTop: 10 }}>{msg}</div>}
         {err && <div style={{ marginTop: 10 }}><Err msg={err} /></div>}

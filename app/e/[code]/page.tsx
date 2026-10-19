@@ -177,17 +177,27 @@ function Exam({ pub, me, answers, setAnswers, onSubmitted }: {
   const dirty = useRef(false);
   const autoSent = useRef(false);
 
-  const save = useCallback(async (submit: boolean) => {
-    const r = await rpc<{ ok: boolean; reason?: string }>("hx_save", { p_attempt: me.attempt_id, p_token: me.token, p_answers: latest.current, p_submit: submit });
-    dirty.current = false;
-    if (submit || r.reason === "submitted") onSubmitted();
-    return r;
+  // 저장은 한 번에 하나씩 순서대로(앞 저장이 끝난 뒤 최신 답을 보낸다) + 일련번호로 서버에서도 순서 보장
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const seq = useRef(Date.now());
+  const save = useCallback((submit: boolean) => {
+    const run = queue.current.catch(() => {}).then(async () => {
+      dirty.current = false;
+      seq.current = Math.max(seq.current + 1, Date.now());
+      const r = await rpc<{ ok: boolean; reason?: string }>("hx_save", {
+        p_attempt: me.attempt_id, p_token: me.token, p_answers: latest.current, p_submit: submit, p_seq: seq.current,
+      });
+      if (submit || r.reason === "submitted") onSubmitted();
+      return r;
+    });
+    queue.current = run;
+    return run;
   }, [me, onSubmitted]);
 
-  // 자동 저장(1.2초 디바운스)
+  // 자동 저장(0.6초 디바운스)
   useEffect(() => {
     if (!dirty.current) return;
-    const t = setTimeout(() => save(false).catch(() => setErr("저장이 잠시 실패했어요. 네트워크를 확인해 주세요.")), 1200);
+    const t = setTimeout(() => save(false).catch(() => { dirty.current = true; setErr("저장이 잠시 실패했어요. 네트워크를 확인해 주세요."); }), 600);
     return () => clearTimeout(t);
   }, [answers, save]);
 
@@ -211,6 +221,7 @@ function Exam({ pub, me, answers, setAnswers, onSubmitted }: {
     else { const cur = Array.isArray(v) ? v : []; set(cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k].sort()); }
   };
   const last = i === qs.length - 1;
+  const go = (n: number) => { if (dirty.current) save(false).catch(() => {}); setI(n); }; // 문항 이동 시 즉시 저장
   const doSubmit = async () => {
     setBusy(true);
     try { await save(true); } catch (e) { setErr((e as Error).message); setBusy(false); setConfirm(false); }
@@ -268,7 +279,7 @@ function Exam({ pub, me, answers, setAnswers, onSubmitted }: {
       <div className="card z1" style={{ marginTop: 14, padding: 14 }}>
         <div className="qdots">
           {qs.map((x, k) => (
-            <button key={x.id} type="button" className={`${isAnswered(answers[x.id]) ? "done" : ""} ${k === i ? "cur" : ""}`} onClick={() => setI(k)}>{x.no}</button>
+            <button key={x.id} type="button" className={`${isAnswered(answers[x.id]) ? "done" : ""} ${k === i ? "cur" : ""}`} onClick={() => go(k)}>{x.no}</button>
           ))}
         </div>
       </div>
@@ -276,10 +287,10 @@ function Exam({ pub, me, answers, setAnswers, onSubmitted }: {
 
       <div className="bottomnav">
         <div className="inner">
-          <button type="button" className="btn" disabled={i === 0} onClick={() => setI(i - 1)}>‹ 이전</button>
+          <button type="button" className="btn" disabled={i === 0} onClick={() => go(i - 1)}>‹ 이전</button>
           {last
             ? <button type="button" className="btn pink lg" onClick={() => setConfirm(true)}>제출하기 🚀</button>
-            : <button type="button" className="btn primary lg" onClick={() => setI(i + 1)}>다음 문제 →</button>}
+            : <button type="button" className="btn primary lg" onClick={() => go(i + 1)}>다음 문제 →</button>}
         </div>
       </div>
 
