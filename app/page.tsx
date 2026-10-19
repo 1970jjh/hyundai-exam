@@ -1,95 +1,34 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import Link from "next/link";
+import { useState } from "react";
+import { Deco } from "@/components/ui";
 
 export default function Home() {
+  const [code, setCode] = useState("");
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+    <div className="wrap" style={{ maxWidth: 1100, paddingTop: 40 }}>
+      <Deco src="star" style={{ width: 110, right: 40, top: 40 }} />
+      <Deco src="plane" cls="d2" style={{ width: 100, right: 300, top: 180 }} />
+      <Deco src="trophy" cls="d3" style={{ width: 100, left: 10, bottom: 40 }} />
+      <div className="grid2 z1" style={{ alignItems: "center" }}>
+        <div>
+          <p className="hand" style={{ fontSize: 26, margin: 0 }}>배우고, 풀고, 성장하는 우리의 첫 시작! ✨</p>
+          <h1 className="display" style={{ fontSize: "clamp(48px, 8vw, 84px)", margin: "10px 0" }}>신입 온보딩<br /><span className="violet">퀴즈 챌린지</span></h1>
+          <p style={{ fontWeight: 700, fontSize: 18, lineHeight: 1.6 }} className="muted">교재만 올리면 AI가 문제를 만들고, 강의장에서 QR로 폰 시험,<br />끝나자마자 채점·해설·결과 보고서까지 한 번에.</p>
+          <form className="card row wrapflex" style={{ marginTop: 20 }} onSubmit={(e) => { e.preventDefault(); if (code.trim()) location.href = `/e/${code.trim().toUpperCase()}`; }}>
+            <input className="input" style={{ flex: 1, minWidth: 160, fontSize: 20, fontWeight: 800, letterSpacing: 2 }} value={code} onChange={(e) => setCode(e.target.value)} placeholder="입장 코드 6자리" maxLength={6} aria-label="입장 코드" />
+            <button className="btn primary lg">학습자 입장 →</button>
+          </form>
+          <div className="row wrapflex" style={{ marginTop: 14 }}>
+            <Link href="/admin" className="btn pink lg">관리자 모드</Link>
+            <span className="note" style={{ fontSize: 18 }}>신입에서 프로로 Lv.UP! ↑</span>
+          </div>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/hero-newbie.png" alt="" style={{ width: "min(100%, 440px)", filter: "drop-shadow(0 20px 30px rgba(80,40,160,.25))" }} />
+        </div>
+      </div>
     </div>
   );
 }
